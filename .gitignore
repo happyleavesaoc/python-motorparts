@@ -1,0 +1,5 @@
+dist/
+motorparts.egg-info/
+.tox/
+*.pickle
+*.pyc
