@@ -2,8 +2,8 @@ from setuptools import setup
 
 setup(
     name='motorparts',
-    version='1.0.0',
-    description='Python 3 API for motorparts.com.',
+    version='1.0.1',
+    description='Python 3 API for mopar.com.',
     url='https://github.com/happyleavesaoc/python-motorparts/',
     license='MIT',
     author='happyleaves',

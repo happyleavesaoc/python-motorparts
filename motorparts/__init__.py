@@ -123,6 +123,7 @@ def get_report(session, vehicle_index):
         raise MoparError("no vhr found")
     return _traverse_report(vhr['reportCard'])
 
+
 @authenticated
 def get_vehicle_health_report(session, vehicle_index):
     """Get complete vehicle health report."""
@@ -161,6 +162,14 @@ def get_tow_guide(session, vehicle_index):
     }).json()
 
 
+def _get_model(vehicle):
+    """Clean the model field. Best guess."""
+    model = vehicle['model']
+    model = model.replace(vehicle['year'], '')
+    model = model.replace(vehicle['make'], '')
+    return model.strip().split(' ')[0]
+
+
 def get_summary(session):
     """Get vehicle summary."""
     profile = get_profile(session)
@@ -175,12 +184,14 @@ def get_summary(session):
                 'vin': vehicle['vin'],
                 'year': vehicle['year'],
                 'make': vehicle['make'],
-                'model': vehicle['model'].split(' ')[0],
+                'model': _get_model(vehicle),
                 'odometer': vehicle['odometerMileage']
             } for vehicle in profile['vehicles']
         ]
     }
-def _remote_status(session, service_id, vin):
+
+
+def _remote_status(session, service_id, vin, interval=3):
     """Poll for remote command status."""
     _LOGGER.info('polling for status')
     resp = session.post(REMOTE_STATUS_URL, {
@@ -191,7 +202,7 @@ def _remote_status(session, service_id, vin):
         return 'failed'
     elif resp['status'] == 'Successful':
         return 'completed'
-    time.sleep(3)
+    time.sleep(interval)
     return _remote_status(session, service_id, vin)
 
 
