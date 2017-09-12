@@ -3,6 +3,12 @@
 import os
 import logging
 import json
+# pylint: disable=wrong-import-position
+import json
+try:
+    from json.decoder import JSONDecodeError
+except ImportError:
+    JSONDecodeError = ValueError
 import pickle
 import time
 import requests
@@ -112,7 +118,7 @@ def get_profile(session):
         if 'errorCode' in profile and profile['errorCode'] == '403':
             raise MoparError("not logged in")
         return profile
-    except json.decoder.JSONDecodeError:
+    except JSONDecodeError:
         raise MoparError("not logged in")
 
 
