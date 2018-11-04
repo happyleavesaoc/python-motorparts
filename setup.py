@@ -9,7 +9,7 @@ setup(
     author='happyleaves',
     author_email='happyleaves.tfr@gmail.com',
     packages=['motorparts'],
-    install_requires=['beautifulsoup4==4.5.1', 'requests==2.12.4'],
+    install_requires=['beautifulsoup4==4.5.1', 'requests>=2.20.0'],
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
