@@ -199,7 +199,7 @@ def get_summary(session):
     }
 
 
-def _remote_status(session, service_id, vehicle_index, uuid, interval=3):
+def _remote_status(session, service_id, uuid, interval=3):
     """Poll for remote command status."""
     _LOGGER.info('polling for status')
     resp = session.get(url = REMOTE_COMMAND_URL, params = {
@@ -211,7 +211,7 @@ def _remote_status(session, service_id, vehicle_index, uuid, interval=3):
     else:
         return 'waiting'
     time.sleep(interval)
-    return _remote_status(session, service_id, vehicle_index, uuid)
+    return _remote_status(session, service_id, uuid)
 
 
 @token
@@ -235,7 +235,7 @@ def remote_command(session, command, vehicle_index, poll=False):
     if poll:
         uuid = profile['vehicles'][vehicle_index]['uuid']
         service_id = resp['serviceRequestId']
-        return _remote_status(session, service_id, vehicle_index)
+        return _remote_status(session, service_id, uuid)
 
 
 def lock(session, vehicle_index):
