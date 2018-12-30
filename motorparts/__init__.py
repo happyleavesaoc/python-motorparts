@@ -201,19 +201,17 @@ def _remote_status(session, service_id, uuid, REMOTE_COMMAND_URL, interval=3):
     """Poll for remote command status."""
     _LOGGER.info('polling for status')
     resp = session.get(url = REMOTE_COMMAND_URL, params = {
-        'remoteServiceRequestId':service_id,
+        'remoteServiceRequestID':service_id,
         'uuid':uuid
     }).json()
     if resp['status'] == 'SUCCESS':
         return 'completed'
-    else:
-        return 'waiting'
     time.sleep(interval)
-    return _remote_status(session, service_id, uuid)
+    return _remote_status(session, service_id, uuid, REMOTE_COMMAND_URL)
 
 
 @token
-def remote_command(session, command, vehicle_index, poll=False):
+def remote_command(session, command, vehicle_index, poll=True):
     """Send a remote command."""
     if command not in SUPPORTED_COMMANDS:
         raise MoparError("unsupported command: " + command)
@@ -238,31 +236,26 @@ def remote_command(session, command, vehicle_index, poll=False):
 
 def lock(session, vehicle_index):
     """Lock."""
-    REMOTE_COMMAND_URL = REMOTE_LOCK_COMMAND_URL
     remote_command(session, COMMAND_LOCK, vehicle_index)
 
 
 def unlock(session, vehicle_index):
     """Unlock."""
-    REMOTE_COMMAND_URL = REMOTE_LOCK_COMMAND_URL
     remote_command(session, COMMAND_UNLOCK, vehicle_index)
 
 
 def engine_on(session, vehicle_index):
     """Turn on the engine."""
-    REMOTE_COMMAND_URL = REMOTE_ENGINE_COMMAND_URL
     remote_command(session, COMMAND_ENGINE_ON, vehicle_index)
 
 
 def engine_off(session, vehicle_index):
     """Turn off the engine."""
-    REMOTE_COMMAND_URL = REMOTE_ENGINE_COMMAND_URL
     remote_command(session, COMMAND_ENGINE_OFF, vehicle_index)
 
 
 def horn(session, vehicle_index):
     """Horn and lights."""
-    REMOTE_COMMAND_URL = REMOTE_ALARM_COMMAND_URL
     remote_command(session, COMMAND_HORN, vehicle_index)
 
 
