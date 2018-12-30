@@ -30,8 +30,6 @@ VHR_URL = 'https://www.mopar.com/moparsvc/getVHR'
 REMOTE_LOCK_COMMAND_URL = 'https://www.mopar.com/moparsvc/connect/lock'
 REMOTE_ENGINE_COMMAND_URL = 'https://www.mopar.com/moparsvc/connect/engine'
 REMOTE_ALARM_COMMAND_URL = 'https://www.mopar.com/moparsvc/connect/alarm'
-global REMOTE_COMMAND_URL
-#REMOTE_STATUS_URL = 'https://www.mopar.com/moparsvc/vehicle/remote/status'
 COOKIE_PATH = './motorparts_cookies.pickle'
 ATTRIBUTION = 'Information provided by www.mopar.com'
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' \
@@ -199,7 +197,7 @@ def get_summary(session):
     }
 
 
-def _remote_status(session, service_id, uuid, interval=3):
+def _remote_status(session, service_id, uuid, REMOTE_COMMAND_URL, interval=3):
     """Poll for remote command status."""
     _LOGGER.info('polling for status')
     resp = session.get(url = REMOTE_COMMAND_URL, params = {
@@ -235,7 +233,7 @@ def remote_command(session, command, vehicle_index, poll=False):
     if poll:
         uuid = profile['vehicles'][vehicle_index]['uuid']
         service_id = resp['serviceRequestId']
-        return _remote_status(session, service_id, uuid)
+        return _remote_status(session, service_id, uuid, REMOTE_COMMAND_URL)
 
 
 def lock(session, vehicle_index):
