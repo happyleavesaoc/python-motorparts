@@ -2,7 +2,6 @@
 
 import os
 import logging
-import json
 # pylint: disable=wrong-import-position
 import json
 try:
@@ -45,8 +44,6 @@ SUPPORTED_COMMANDS = [COMMAND_LOCK, COMMAND_UNLOCK, COMMAND_ENGINE_ON,
 
 class MoparError(Exception):
     """Mopar error."""
-
-    pass
 
 
 def _save_cookies(requests_cookiejar, filename):
@@ -197,17 +194,17 @@ def get_summary(session):
     }
 
 
-def _remote_status(session, service_id, uuid, REMOTE_COMMAND_URL, interval=3):
+def _remote_status(session, service_id, uuid, url, interval=3):
     """Poll for remote command status."""
     _LOGGER.info('polling for status')
-    resp = session.get(url = REMOTE_COMMAND_URL, params = {
+    resp = session.get(url, params={
         'remoteServiceRequestID':service_id,
         'uuid':uuid
     }).json()
     if resp['status'] == 'SUCCESS':
         return 'completed'
     time.sleep(interval)
-    return _remote_status(session, service_id, uuid, REMOTE_COMMAND_URL)
+    return _remote_status(session, service_id, uuid, url)
 
 
 @token
@@ -217,13 +214,13 @@ def remote_command(session, command, vehicle_index, poll=True):
         raise MoparError("unsupported command: " + command)
     profile = get_profile(session)
     _validate_vehicle(vehicle_index, profile)
-    if (command == 'LOCK') or (command == 'UNLOCK'):
-        REMOTE_COMMAND_URL = REMOTE_LOCK_COMMAND_URL
-    if (command == 'START') or (command == 'STOP'):
-        REMOTE_COMMAND_URL = REMOTE_ENGINE_COMMAND_URL
-    if (command == 'HORN_LIGHT'):
-        REMOTE_COMMAND_URL = REMOTE_ALARM_COMMAND_URL
-    resp = session.post(REMOTE_COMMAND_URL, {
+    if command in [COMMAND_LOCK, COMMAND_UNLOCK]:
+        url = REMOTE_LOCK_COMMAND_URL
+    elif command in [COMMAND_ENGINE_ON, COMMAND_ENGINE_OFF]:
+        url = REMOTE_ENGINE_COMMAND_URL
+    elif command == COMMAND_HORN:
+        url = REMOTE_ALARM_COMMAND_URL
+    resp = session.post(url, {
         'pin': session.auth.pin,
         'uuid': profile['vehicles'][vehicle_index]['uuid'],
         'action': command
@@ -231,7 +228,8 @@ def remote_command(session, command, vehicle_index, poll=True):
     if poll:
         uuid = profile['vehicles'][vehicle_index]['uuid']
         service_id = resp['serviceRequestId']
-        return _remote_status(session, service_id, uuid, REMOTE_COMMAND_URL)
+        return _remote_status(session, service_id, uuid, url)
+    return 'submitted'
 
 
 def lock(session, vehicle_index):
