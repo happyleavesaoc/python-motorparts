@@ -27,18 +27,18 @@ PROFILE_URL = 'https://www.mopar.com/moparsvc/user/getProfile'
 TOKEN_URL = 'https://www.mopar.com/moparsvc/token'
 TOW_URL = 'https://www.mopar.com/moparsvc/vehicle/tow-guide/vin'
 VHR_URL = 'https://www.mopar.com/moparsvc/getVHR'
-REMOTE_COMMAND_URL = 'https://www.mopar.com/moparsvc/remoteCommands'
-REMOTE_STATUS_URL = 'https://www.mopar.com/moparsvc/vehicle/remote/status'
+REMOTE_LOCK_COMMAND_URL = 'https://www.mopar.com/moparsvc/connect/lock'
+REMOTE_ENGINE_COMMAND_URL = 'https://www.mopar.com/moparsvc/connect/engine'
+REMOTE_ALARM_COMMAND_URL = 'https://www.mopar.com/moparsvc/connect/alarm'
 COOKIE_PATH = './motorparts_cookies.pickle'
 ATTRIBUTION = 'Information provided by www.mopar.com'
-USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 ' \
-             '(KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
-
-COMMAND_LOCK = 'lock'
-COMMAND_UNLOCK = 'unlock'
-COMMAND_ENGINE_ON = 'engineon'
-COMMAND_ENGINE_OFF = 'engineoff'
-COMMAND_HORN = 'horn'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' \
+             '(KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763'
+COMMAND_LOCK = 'LOCK'
+COMMAND_UNLOCK = 'UNLOCK'
+COMMAND_ENGINE_ON = 'START'
+COMMAND_ENGINE_OFF = 'STOP'
+COMMAND_HORN = 'HORN_LIGHT'
 SUPPORTED_COMMANDS = [COMMAND_LOCK, COMMAND_UNLOCK, COMMAND_ENGINE_ON,
                       COMMAND_ENGINE_OFF, COMMAND_HORN]
 
@@ -197,36 +197,41 @@ def get_summary(session):
     }
 
 
-def _remote_status(session, service_id, vin, interval=3):
+def _remote_status(session, service_id, uuid, REMOTE_COMMAND_URL, interval=3):
     """Poll for remote command status."""
     _LOGGER.info('polling for status')
-    resp = session.post(REMOTE_STATUS_URL, {
-        'serviceID': service_id,
-        'vin': vin
+    resp = session.get(url = REMOTE_COMMAND_URL, params = {
+        'remoteServiceRequestID':service_id,
+        'uuid':uuid
     }).json()
-    if not resp['active']:
-        return 'failed'
-    elif resp['status'] == 'Successful':
+    if resp['status'] == 'SUCCESS':
         return 'completed'
     time.sleep(interval)
-    return _remote_status(session, service_id, vin)
+    return _remote_status(session, service_id, uuid, REMOTE_COMMAND_URL)
 
 
 @token
-def remote_command(session, command, vehicle_index, poll=False):
+def remote_command(session, command, vehicle_index, poll=True):
     """Send a remote command."""
     if command not in SUPPORTED_COMMANDS:
         raise MoparError("unsupported command: " + command)
     profile = get_profile(session)
     _validate_vehicle(vehicle_index, profile)
+    if (command == 'LOCK') or (command == 'UNLOCK'):
+        REMOTE_COMMAND_URL = REMOTE_LOCK_COMMAND_URL
+    if (command == 'START') or (command == 'STOP'):
+        REMOTE_COMMAND_URL = REMOTE_ENGINE_COMMAND_URL
+    if (command == 'HORN_LIGHT'):
+        REMOTE_COMMAND_URL = REMOTE_ALARM_COMMAND_URL
     resp = session.post(REMOTE_COMMAND_URL, {
         'pin': session.auth.pin,
         'uuid': profile['vehicles'][vehicle_index]['uuid'],
         'action': command
     }).json()
     if poll:
-        return _remote_status(session, resp['customerServiceId'],
-                              resp['vehicleId'])
+        uuid = profile['vehicles'][vehicle_index]['uuid']
+        service_id = resp['serviceRequestId']
+        return _remote_status(session, service_id, uuid, REMOTE_COMMAND_URL)
 
 
 def lock(session, vehicle_index):
