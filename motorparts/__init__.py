@@ -194,17 +194,17 @@ def get_summary(session):
     }
 
 
-def _remote_status(session, service_id, uuid, url, interval=3):
+def _remote_status(session, serviceRequestId, vin, url, interval=3):
     """Poll for remote command status."""
     _LOGGER.info('polling for status')
     resp = session.get(url, params={
-        'remoteServiceRequestID':service_id,
-        'uuid':uuid
+        'remoteServiceRequestID':serviceRequestId,
+        'vin':vin
     }).json()
     if resp['status'] == 'SUCCESS':
         return 'completed'
     time.sleep(interval)
-    return _remote_status(session, service_id, uuid, url)
+    return _remote_status(session, serviceRequestId, vin, url)
 
 
 @token
@@ -222,13 +222,13 @@ def remote_command(session, command, vehicle_index, poll=True):
         url = REMOTE_ALARM_COMMAND_URL
     resp = session.post(url, {
         'pin': session.auth.pin,
-        'uuid': profile['vehicles'][vehicle_index]['uuid'],
+        'vin': profile['vehicles'][vehicle_index]['vin'],
         'action': command
     }).json()
     if poll:
-        uuid = profile['vehicles'][vehicle_index]['uuid']
-        service_id = resp['serviceRequestId']
-        return _remote_status(session, service_id, uuid, url)
+        vin = profile['vehicles'][vehicle_index]['vin']
+        serviceRequestId = resp['serviceRequestId']
+        return _remote_status(session, serviceRequestId, vin, url)
     return 'submitted'
 
 
